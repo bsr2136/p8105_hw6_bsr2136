@@ -1,0 +1,59 @@
+---
+title: "p8105_hw6_bsr2136"
+author: "Barik Rajpal"
+date: "11/22/2019"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+## Problem 0
+
+```{r p0}
+dir.create("files_for_hw6")
+```
+
+## Problem 1
+
+### Loading the data, Cleaning it, and Checking for Missing Values
+
+```{r p1 setup, results = F}
+birthwt <- read_csv("./files_for_hw6/birthweight.csv")
+
+birthwt <- birthwt %>%
+  mutate(babysex = factor(babysex),
+         frace = factor(frace),
+         malform = factor(malform),
+         mrace = factor(mrace),
+         )
+
+map(birthwt, ~sum(is.na(.)))
+```
+
+There are no missing values, and the 4 categorical variables are now factors.
+
+### Proposed Regression Model
+
+```{r p1 regression model}
+
+```
+
+### Models to compare to
+
+```{r}
+model1 <- lm(bwt ~ blength + gaweeks, data = birthwt)
+
+model2 <- lm(bwt ~ bhead * blength * babysex, data = birthwt)
+```
+
+
+## Problem 2
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+
