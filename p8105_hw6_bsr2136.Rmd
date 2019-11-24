@@ -19,7 +19,7 @@ dir.create("files_for_hw6")
 
 ## Problem 1
 
-### Loading the data, Cleaning it, and Checking for Missing Values
+### Loading the data, cleaning it, and checking for missing values
 
 ```{r p1 setup, message = F}
 birthwt <- read_csv("./files_for_hw6/birthweight.csv")
@@ -40,7 +40,7 @@ map(birthwt, ~sum(is.na(.)))
 
 There are no missing values, and the 4 categorical variables are now factors.
 
-### Proposed Regression Model
+### Proposed regression model
 
 I'm using the step function, followed by checking the LM Adjusted R-Squared, and RSS to determine the optimal model. I'm hiding the results of this code chunk, as they take up a lot of space (especially the step function), but I will summarize them below.
 
@@ -66,13 +66,13 @@ anova(prop_reg_model3,prop_reg_model2)
 
 I first built the model using the step function with direction = "backwards", which initially builds the model with all variables as predictors, then removes them one at a time and tests if the AIC decreases (which is indicative of better model fit). The model that the step function returned was:
 
-lm(formula = bwt ~ babysex + bhead + blength + delwt + fincome + gaweeks + mheight + mrace + parity + ppwt + smoken, data = birthwt)
+lm(formula=bwt~babysex+bhead+blength+delwt+fincome+gaweeks+mheight+mrace+parity+ppwt+smoken,data=birthwt)
 
-I checked a summary of the model, and then removed the least significant variables and checked to see if the model's Adjusted R-Squared decreased significantly, and used an anova to test if the RSS was significantly decreased due to the additional variable. What I found was that removing "fincome" did not decrease the adjusted R-squared very much, and including "fincome" did not decrease the RSS very significantly, so I removed fincome from the model as well. I checked if removing "parity" would be similar, but the adjusted R-squared did decrease a bit, and an anova test suggested that including "parity" actually did decrease the RSS to a significant degree, so I left "parity" in the model, and my final model was:
+I checked a summary of the model, and then removed the least significant variables and checked to see if the model's Adjusted R-Squared decreased significantly, and used an anova to test if the RSS was significantly decreased due to inclusion of the additional variable. What I found was that removing "fincome" did not decrease the adjusted R-squared very much, and including "fincome" did not decrease the RSS very significantly, so I removed "fincome" from the model as well. I checked if removing "parity" would be similar, but the adjusted R-squared did decrease a bit, and an anova test suggested that including "parity" actually did decrease the RSS to a significant degree, so I left "parity" in the model, and my final model was:
 
-lm(formula = bwt ~ babysex + bhead + blength + delwt + gaweeks + mheight + mrace + parity + ppwt + smoken, data = birthwt)
+lm(formula=bwt~babysex+bhead+blength+delwt+gaweeks+mheight+mrace+parity+ppwt+smoken,data=birthwt)
     
-### Plotting Residuals Against Fitted Values
+### Plotting residuals against fitted values
 
 ```{r p1 plot}
 birthwtdf <- add_residuals(birthwt, prop_reg_model2)
@@ -80,7 +80,7 @@ birthwtdf <- add_predictions(birthwtdf, prop_reg_model2)
 
 birthwtdf %>%
   ggplot(aes(x=pred,y=resid)) + 
-  geom_point(alpha=.5)
+  geom_point(alpha=.3)
 ```
 
 The spread of the residuals looks random, which is a good indication that our model did not miss an important predictor.
@@ -88,8 +88,7 @@ The spread of the residuals looks random, which is a good indication that our mo
 ### Comparing the model with 2 others by plotting prediction error distributions
 
 ```{r p1 model comparison}
-model1 <- lm(bwt ~ blength + gaweeks, data = birthwt)
-model2 <- lm(bwt ~ bhead * blength * babysex, data = birthwt)
+set.seed(1)
 
 cv_df <- crossv_mc(birthwt,100)
 
@@ -121,9 +120,9 @@ The RMSE is the lowest for the model I created, which suggests it is the best fi
 
 ## Problem 2
 
-### Loading the data, Bootstrap, models, and results
+### Loading the data, bootstrap, models, and results
 
-```{r p2}
+```{r p2 setup, message = F, warning = F}
 weather_df = 
   rnoaa::meteo_pull_monitors(
     c("USW00094728"),
@@ -136,6 +135,8 @@ weather_df =
     tmax = tmax / 10) %>%
   select(name, id, everything())
 
+set.seed(10)
+
 boots_df <- weather_df %>%
   bootstrap(n=5000) %>%
   mutate(
@@ -146,22 +147,31 @@ boots_df <- weather_df %>%
 
 ### Plotting r.squared and constructing a 95% confidence interval
 
-```{r p2 rsquared}
+```{r p2 rsquared plot}
 boots_df_r2 <- boots_df %>%
   select(-strap, -models) %>% 
   unnest(results) %>%
   select(.id,r.squared)
 
+boots_df_r2 %>%
+  ggplot(aes(x=r.squared)) +
+  geom_histogram(bins = 30)
+```
+
+The distribution of the estimates looks fairly normal and is centered around .912. The fact that we are examining 5000 estimates (a very high n) serves to improve normality.
+
+```{r p2 rsquared 95%}
 boots_df_r2 %>% 
   pull(r.squared) %>%
   as.vector() %>%
   quantile(probs=c(0.025, 0.975))
 ```
 
+The 95% confidence interval for the r.squared estimates is (0.8938,0.9275).
 
-### Plotting log(b0*b1) and constructing a 95$ confidence interval
+### Plotting log(b0*b1) and constructing a 95% confidence interval
 
-```{r p2 logb0b1}
+```{r p2 logb0b1 plot}
 boots_df_logb0b1 <- boots_df %>%
   select(-strap, -models) %>% 
   unnest(results2) %>%
@@ -171,9 +181,18 @@ boots_df_logb0b1 <- boots_df %>%
   janitor::clean_names() %>%
   mutate(logb0b1 = log(intercept*tmin))
 
+boots_df_logb0b1 %>%
+  ggplot(aes(x=logb0b1)) +
+  geom_histogram(bins = 30)
+```
+
+The distribution of the estimates looks fairly normal and is centered around 2.02. The fact that we are examining 5000 estimates (a very high n) serves to improve normality.
+
+```{r p2 logb0b1 95%}
 boots_df_logb0b1 %>% 
   pull(logb0b1) %>%
   as.vector() %>%
   quantile(probs=c(0.025, 0.975))
 ```
 
+The 95% confidence interval for the log(B0*B1) estimates is (1.9646,2.0591).
