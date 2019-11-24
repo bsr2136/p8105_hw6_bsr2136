@@ -64,7 +64,7 @@ summary(prop_reg_model3)
 anova(prop_reg_model3,prop_reg_model2)
 ```
 
-I first built the model using the step function with direction = "backwards", which initially builds the model with all variables as predictors, then removes them one at a time and tests if the AIC decreases (which is indicative of better model fit). The model that the step function returned was:
+I first built the model using the step function with direction = "backwards", which initially builds the model with all variables as predictors, then removes them one at a time and tests if the AIC decreases (which is indicative of better model fit). The function keeps variables in if the AIC doesn't decrease significantly. The model that the step function returned was:
 
 lm(formula=bwt~babysex+bhead+blength+delwt+fincome+gaweeks+mheight+mrace+parity+ppwt+smoken,data=birthwt)
 
@@ -80,7 +80,9 @@ birthwtdf <- add_predictions(birthwtdf, prop_reg_model2)
 
 birthwtdf %>%
   ggplot(aes(x=pred,y=resid)) + 
-  geom_point(alpha=.3)
+  geom_point(alpha=.3) + 
+  xlab("Fitted Values") + 
+  ylab("Model Residuals")
 ```
 
 The spread of the residuals looks random, which is a good indication that our model did not miss an important predictor.
@@ -113,7 +115,10 @@ cv_df3 %>%
     values_to = "rmse",
     names_prefix = "rmse_") %>% 
   mutate(model = fct_inorder(model)) %>% 
-  ggplot(aes(x = model, y = rmse)) + geom_violin()
+  ggplot(aes(x = model, y = rmse)) +
+  geom_violin() +
+  xlab("Model") +
+  ylab("CV Prediction Error")
 ```
 
 The RMSE is the lowest for the model I created, which suggests it is the best fit model of the three. Mod2 is fairly close, and mod1 is not as good a fit.
@@ -155,7 +160,9 @@ boots_df_r2 <- boots_df %>%
 
 boots_df_r2 %>%
   ggplot(aes(x=r.squared)) +
-  geom_histogram(bins = 30)
+  geom_histogram(bins = 30) +
+  xlab("R.Squared Estimate") +
+  ylab("Count")
 ```
 
 The distribution of the estimates looks fairly normal and is centered around .912. The fact that we are examining 5000 estimates (a very high n) serves to improve normality.
@@ -183,7 +190,9 @@ boots_df_logb0b1 <- boots_df %>%
 
 boots_df_logb0b1 %>%
   ggplot(aes(x=logb0b1)) +
-  geom_histogram(bins = 30)
+  geom_histogram(bins = 30) +
+  xlab("Log(B0*B1) Estimate") +
+  ylab("Count")
 ```
 
 The distribution of the estimates looks fairly normal and is centered around 2.02. The fact that we are examining 5000 estimates (a very high n) serves to improve normality.
